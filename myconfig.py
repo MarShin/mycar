@@ -29,7 +29,7 @@ IMAGE_H = 224
 # CAMERA_HFLIP = False
 # # For CSIC camera - If the camera is mounted in a rotated position, changing the below parameter will correct the output frame orientation
 CSIC_CAM_GSTREAMER_FLIP_PARM = (
-    6  # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
+    0  # (0 => none , 4 => Flip horizontally, 6 => Flip vertically)
 )
 #
 # # For IMAGE_LIST camera
@@ -54,7 +54,8 @@ PCA9685_I2C_BUSNUM = 1  # None will auto detect, which is fine on the pi. But ot
 # #STEERING
 STEERING_CHANNEL = 1  # channel on the 9685 pwm board 0-15
 # the pwm gap is 170 for deafult, middle 395
-STEERING_LEFT_PWM = 460  # pwm value for full left steering, suggested: 460
+# my car: LEFT 500 <- 105 -> MIDDLE 395 <- 105 -> RIGHT 290
+STEERING_LEFT_PWM = 500  # pwm value for full left steering, suggested: 460
 STEERING_RIGHT_PWM = 290  # pwm value for full right steering, suggested 290
 #
 # #STEERING FOR PIGPIO_PWM
