@@ -1,0 +1,34 @@
+**/.ipynb_checkpoints/*
+*.pyc
+__pycache__
+
+# Packages
+*.egg
+!/tests/**/*.egg
+**/*.egg-info
+**/dist/**
+build
+_build
+.cache
+*.so
+
+# Installer logs
+pip-log.txt
+
+# Unit test / coverage reports
+.coverage
+.tox
+.pytest_cache
+
+.DS_Store
+.idea/*
+.python-version
+.vscode/*
+
+/setup.cfg
+MANIFEST.in
+/setup.py
+
+# trashbot
+**/cache-directory/
+**/dask-worker-space/*
