@@ -155,7 +155,8 @@ class ActorNetwork(nn.Module):
             actions = probabilities.sample()
 
         # action here is scaled to the env max action space as Tanh outputs [-1,+1]
-        # this is SAC enforcing action boudns on reparam vector TODO: check appendix C; SpinningUp have a 'better' approach
+        # this is SAC enforcing action bounds on reparam vector
+        # TODO: check appendix C; SpinningUp have a 'better' approach
         action = T.tanh(actions) * T.tensor(self.max_action).to(self.device)
         log_probs = probabilities.log_prob(actions)
         log_probs -= T.log(1 - action.pow(2) + self.reparam_noise)
