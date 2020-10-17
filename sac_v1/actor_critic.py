@@ -110,6 +110,11 @@ class Agent:
         action = T.tensor(action, dtype=T.float).to(self.actor.device)
 
         # todo: print out the size
+        # print("////// VALUE NETWORK PARAMS/////")
+        # print("\t value output size: ", self.value(state).size())
+        # print("\t value output size view-1: ", self.value(state).view(-1).size())
+        # print()
+
         value = self.value(state).view(-1)
         value_ = self.target_value(state_).view(-1)
         value_[done] = 0.0
@@ -146,7 +151,7 @@ class Agent:
         # backprop 2 critic network
         # TODO: qhat value_ probably diff in v2
         # action sampled from replay buffer - hence old_policy
-        self.critic_2.optimizer.zero_grad()
+        self.critic_1.optimizer.zero_grad()
         self.critic_2.optimizer.zero_grad()
         q_hat = self.scale * reward + self.gamma * value_
         q1_old_policy = self.critic_1.forward(state, action).view(-1)

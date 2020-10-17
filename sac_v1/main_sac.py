@@ -13,7 +13,7 @@ if __name__ == "__main__":
         env=env,
         n_actions=env.action_space.shape[0],
     )
-    n_games = 100
+    n_games = 250
 
     # record videos of teh agent playing the game
     env = wrappers.Monitor(

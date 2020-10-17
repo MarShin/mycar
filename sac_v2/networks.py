@@ -10,7 +10,7 @@ import numpy as np
 class CriticNetwork(nn.Module):
     def __init__(
         self,
-        beta,
+        lr,
         input_dims,
         n_actions,
         fc1_dims=256,
@@ -33,7 +33,7 @@ class CriticNetwork(nn.Module):
         self.q = nn.Linear(self.fc2_dims, 1)
 
         # TODO: try AdamW, Radam
-        self.optimizer = optim.Adam(self.parameters(), lr=beta)
+        self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
 
         self.to(self.device)
@@ -58,7 +58,7 @@ class CriticNetwork(nn.Module):
 class ActorNetwork(nn.Module):
     def __init__(
         self,
-        alpha,
+        lr,
         input_dims,
         max_action,
         fc1_dims=256,
@@ -83,7 +83,7 @@ class ActorNetwork(nn.Module):
         self.mu = nn.Linear(self.fc2_dims, self.n_actions)
         self.sigma = nn.Linear(self.fc2_dims, self.n_actions)
 
-        self.optimizer = optim.Adam(self.parameters(), lr=alpha)
+        self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
 
         self.to(self.device)
