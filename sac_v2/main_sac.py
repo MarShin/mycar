@@ -16,9 +16,9 @@ if __name__ == "__main__":
     )
     n_games = 250
 
-#     env = wrappers.Monitor(
-#         env, "tmp/video", video_callable=lambda episode_id: True, force=True
-#     )
+    env = wrappers.Monitor(
+        env, "tmp/video", video_callable=lambda episode_id: True, force=True
+    )
     filename = "inverted_pendulum.png"
 
     figure_file = "plots/" + filename
