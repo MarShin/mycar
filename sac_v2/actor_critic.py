@@ -103,21 +103,28 @@ class Agent:
 
     def compute_q_loss(self, reward, done, state, state_, action):
 
-        q1 = self.critic_1.forward(state, action)
-        q2 = self.critic_2.forward(state, action)
+        q1 = self.critic_1.forward(state, action).view(-1)
+        q2 = self.critic_2.forward(state, action).view(-1)
+#         print('q1 size', q1.size(), '\n')
+        
 
         with T.no_grad():
             # target action from the CURRENT plicy
             action_, log_probs_ = self.actor.sample_normal(state, reparameterize=False)
+            log_probs_ = log_probs_.view(-1)
 
             # target Q values
-            q1_targ = self.target_critic_1(state_, action_)
-            q2_targ = self.target_critic_2(state_, action_)
+            q1_targ = self.target_critic_1(state_, action_).view(-1)
+            q2_targ = self.target_critic_2(state_, action_).view(-1)
             q_targ = T.min(q1_targ, q2_targ)
+#             print('q_targ size', q_targ.size(), '\n')
             backup = reward + self.gamma * (1 - done) * (
                 q_targ - self.alpha * log_probs_
             )
+#             print('log_probs_ size', log_probs_.size())
+#             print('backup size', backup.size(), '\n')
 
+#         broadcasting error
         loss_q1 = F.mse_loss(q1, backup)
         loss_q2 = F.mse_loss(q2, backup)
         loss_q = loss_q1 + loss_q2
