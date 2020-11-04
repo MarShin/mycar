@@ -32,3 +32,5 @@ MANIFEST.in
 # trashbot
 **/cache-directory/
 **/dask-worker-space/*
+**/video/
+**/archive/
