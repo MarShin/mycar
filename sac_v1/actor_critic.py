@@ -97,7 +97,7 @@ class Agent:
 
     def learn(self):
         if self.memory.mem_cntr < self.batch_size:
-            return
+            return None, None
 
         state, action, reward, new_state, done = self.memory.sample_buffer(
             self.batch_size
@@ -166,4 +166,8 @@ class Agent:
 
         # update target networks
         self.update_network_parameters()
+
+        # print("critic loss: ", critic_loss)
+        # print("actor loss: ", actor_loss)
+        return critic_loss, actor_loss
 

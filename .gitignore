@@ -34,3 +34,4 @@ MANIFEST.in
 **/dask-worker-space/*
 **/video/
 **/archive/
+**/wandb/

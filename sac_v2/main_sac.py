@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     config = dict(
-        n_games=250,
+        n_games=40,
         env_name="InvertedPendulumBulletEnv-v0",
         alpha=0.2,
         gamma=0.99,
@@ -27,7 +27,12 @@ if __name__ == "__main__":
         reward_scale=2,
     )
 
-    with wandb.init(project="trashbot-sac", config=config):
+    with wandb.init(
+        project="trashbot-sac",
+        tags=[config["env_name"]],
+        config=config,
+        monitor_gym=True,
+    ):
         config = wandb.config
         env = gym.make(config.env_name)
         agent = Agent(
@@ -66,6 +71,7 @@ if __name__ == "__main__":
                 observation_, reward, done, info = env.step(action)
                 score += reward
                 agent.remember(observation, action, reward, observation_, done)
+
                 if not load_checkpoint:
                     loss_q, loss_q1, loss_q2, loss_p = agent.learn()
                 observation = observation_
@@ -79,7 +85,6 @@ if __name__ == "__main__":
             print(f"episode {i} score {score} avg_score {avg_score}")
             wandb.log(
                 {
-                    "episode": i,
                     "score": score,
                     "avg_score": avg_score,
                     "loss_q": loss_q,
@@ -89,11 +94,31 @@ if __name__ == "__main__":
                 }
             )
 
-            # Save the model in the exchangeable ONNX format
-            torch.onnx.export(
-                [agent.actor, agent.critic_2, agent.critic_2], observation, "model.onnx"
-            )
-            wandb.save("model.onnx")
+        # WHEN DONE TRIANING
+        # Save the model in the exchangeable ONNX format
+        torch.onnx.export(
+            agent.actor, (torch.from_numpy(observation).float()), "actor.onnx"
+        )
+
+        print("OBSERVATION", observation)
+        print("\nACTION", action)
+        torch.onnx.export(
+            agent.critic_1,
+            (torch.from_numpy(observation), torch.from_numpy(action),),
+            "critic_1.onnx",
+        )
+        # torch.onnx.export(
+        #     agent.critic_2,
+        #     (
+        #         torch.from_numpy(observation),
+        #         torch.from_numpy(action),
+        #     ),
+        #     "critic_2.onnx",
+        # )
+
+        wandb.save("actor.onnx")
+        wandb.save("critic_1.onnx")
+        # wandb.save("critic_2.onnx")
 
     # TEST MODE
     if load_checkpoint:

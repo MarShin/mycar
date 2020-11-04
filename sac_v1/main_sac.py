@@ -41,7 +41,9 @@ if __name__ == "__main__":
             score += reward
             agent.remember(observation, action, reward, observation_, done)
             if not load_checkpoint:
-                agent.learn()
+                critic_loss, actor_loss = agent.learn()
+                # agent.learn()
+
             observation = observation_
         score_history.append(score)
         avg_score = np.mean(score_history[-100:])
@@ -52,6 +54,7 @@ if __name__ == "__main__":
                 agent.save_models()
 
         print("episode ", i, "score %.1f" % score, "avg_score %.1f" % avg_score)
+        print(f"actor_loss: {actor_loss} \t critic_loss: {critic_loss}")
 
     if not load_checkpoint:
         x = [i + 1 for i in range(n_games)]

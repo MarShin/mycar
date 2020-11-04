@@ -6,7 +6,7 @@ import numpy as np
 from buffer import ReplayBuffer
 from networks import ActorNetwork, CriticNetwork
 
-# TODO: variable input_dims & n_actions
+
 class Agent:
     def __init__(
         self,
@@ -128,7 +128,6 @@ class Agent:
         loss_q2 = F.mse_loss(q2, backup)
         loss_q = loss_q1 + loss_q2
 
-        # TODO: return q1, q2 as dict for logging: q_info
         return loss_q, loss_q1, loss_q2
 
     def compute_p_loss(self, reward, done, state, state_, action):
@@ -149,7 +148,7 @@ class Agent:
 
     def learn(self):
         if self.memory.mem_cntr < self.batch_size:
-            return
+            return None, None, None, None
 
         # sample from Replay Buffer
         state, action, reward, new_state, done = self.memory.sample_buffer(

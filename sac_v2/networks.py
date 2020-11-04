@@ -32,7 +32,6 @@ class CriticNetwork(nn.Module):
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         self.q = nn.Linear(self.fc2_dims, 1)
 
-        # TODO: try AdamW, Radam
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
 
