@@ -1,0 +1,15 @@
+2020-11-04 19:02:26,218 INFO    MainThread:23189 [wandb_init.py:_log_setup():293] Logging user logs to wandb/run-20201104_190226-uob65wsx/logs/debug.log
+2020-11-04 19:02:26,218 INFO    MainThread:23189 [wandb_init.py:_log_setup():294] Logging internal logs to wandb/run-20201104_190226-uob65wsx/logs/debug-internal.log
+2020-11-04 19:02:26,219 INFO    MainThread:23189 [wandb_setup.py:_flush():69] setting env: {}
+2020-11-04 19:02:26,219 INFO    MainThread:23189 [wandb_setup.py:_flush():69] setting user settings: {'email': 'martinshin95@gmail.com'}
+2020-11-04 19:02:26,219 INFO    MainThread:23189 [wandb_setup.py:_flush():69] multiprocessing start_methods=fork,spawn,forkserver
+2020-11-04 19:02:27,427 INFO    MainThread:23189 [wandb_run.py:_console_start():1290] atexit reg
+2020-11-04 19:02:27,428 INFO    MainThread:23189 [wandb_run.py:_redirect():1160] redirect: SettingsConsole.REDIRECT
+2020-11-04 19:02:27,429 INFO    MainThread:23189 [wandb_run.py:_redirect():1163] Redirecting console.
+2020-11-04 19:02:27,429 INFO    MainThread:23189 [redirect.py:install():196] install start
+2020-11-04 19:02:27,429 INFO    MainThread:23189 [redirect.py:install():211] install stop
+2020-11-04 19:02:27,429 INFO    MainThread:23189 [redirect.py:install():196] install start
+2020-11-04 19:02:27,429 INFO    MainThread:23189 [redirect.py:install():211] install stop
+2020-11-04 19:02:27,430 INFO    MainThread:23189 [wandb_run.py:_redirect():1207] Redirects installed.
+2020-11-04 19:02:27,599 INFO    MainThread:23189 [wandb_watch.py:watch():32] Watching
+2020-11-04 19:02:27,600 INFO    MainThread:23189 [wandb_run.py:finish():988] finishing run marshin/trashbot-sac/uob65wsx

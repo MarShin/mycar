@@ -1,0 +1,22 @@
+{
+    "os": "Darwin-19.6.0-x86_64-i386-64bit",
+    "python": "3.7.7",
+    "heartbeatAt": "2020-11-04T11:02:27.339249",
+    "startedAt": "2020-11-04T11:02:26.214834",
+    "docker": null,
+    "cpu_count": 8,
+    "cuda": null,
+    "args": [],
+    "state": "running",
+    "codePath": "sac_v2/main_sac.py",
+    "program": "main_sac.py",
+    "git": {
+        "remote": "https://github.com/MarShin/mycar.git",
+        "commit": "b33ba2774e2b0357345630fee133b9fe93dc858e"
+    },
+    "email": "martinshin95@gmail.com",
+    "root": "/Users/MartinShin/code/trashbot/mycar",
+    "host": "Martins-MacBook-Pro-2.local",
+    "username": "MartinShin",
+    "executable": "/Users/MartinShin/.conda/envs/donkey/bin/python"
+}
