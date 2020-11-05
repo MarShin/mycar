@@ -14,7 +14,7 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     config = dict(
-        n_games=40,
+        n_games=30,
         env_name="InvertedPendulumBulletEnv-v0",
         alpha=0.2,
         gamma=0.99,
@@ -96,15 +96,19 @@ if __name__ == "__main__":
 
         # WHEN DONE TRIANING
         # Save the model in the exchangeable ONNX format
-        torch.onnx.export(
-            agent.actor, (torch.from_numpy(observation).float()), "actor.onnx"
-        )
-
+        print('SAVING MODELS AFTER TRAINING..')
         print("OBSERVATION", observation)
         print("\nACTION", action)
         torch.onnx.export(
+            agent.actor, (torch.from_numpy(observation).float()), "actor.onnx"
+        )
+        
+        state, action, reward, new_state, done = agent.memory.sample_buffer(
+            config.batch_size
+        )
+        torch.onnx.export(
             agent.critic_1,
-            (torch.from_numpy(observation), torch.from_numpy(action),),
+            torch.cat([torch.from_numpy(state), torch.from_numpy(action)], dim=1),
             "critic_1.onnx",
         )
         # torch.onnx.export(
