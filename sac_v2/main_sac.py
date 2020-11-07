@@ -10,11 +10,9 @@ from tqdm import tqdm
 
 # from tqdm.notebook import tqdm
 
-# from utils import plot_learning_curve
-
 if __name__ == "__main__":
     config = dict(
-        n_games=30,
+        n_games=10,
         env_name="InvertedPendulumBulletEnv-v0",
         alpha=0.2,
         gamma=0.99,
@@ -96,41 +94,39 @@ if __name__ == "__main__":
 
         # WHEN DONE TRIANING
         # Save the model in the exchangeable ONNX format
-        print('SAVING MODELS AFTER TRAINING..')
+        print("SAVING MODELS AFTER TRAINING..")
         print("OBSERVATION", observation)
         print("\nACTION", action)
         torch.onnx.export(
             agent.actor, (torch.from_numpy(observation).float()), "actor.onnx"
         )
-        
+
         state, action, reward, new_state, done = agent.memory.sample_buffer(
             config.batch_size
         )
         torch.onnx.export(
             agent.critic_1,
-            torch.cat([torch.from_numpy(state), torch.from_numpy(action)], dim=1),
+            (
+                torch.tensor(state, dtype=torch.float),
+                torch.tensor(action, dtype=torch.float),
+            ),
             "critic_1.onnx",
         )
-        # torch.onnx.export(
-        #     agent.critic_2,
-        #     (
-        #         torch.from_numpy(observation),
-        #         torch.from_numpy(action),
-        #     ),
-        #     "critic_2.onnx",
-        # )
+
+        torch.onnx.export(
+            agent.critic_2,
+            (
+                torch.tensor(state, dtype=torch.float),
+                torch.tensor(action, dtype=torch.float),
+            ),
+            "critic_2.onnx",
+        )
 
         wandb.save("actor.onnx")
         wandb.save("critic_1.onnx")
-        # wandb.save("critic_2.onnx")
+        wandb.save("critic_2.onnx")
 
     # TEST MODE
     if load_checkpoint:
         agent.load_models()
         env.render(mode="human")
-
-    # filename = "inverted_pendulum.png"
-    # figure_file = "plots/" + filename
-    # if not load_checkpoint:
-    #     x = [i + 1 for i in range(n_games)]
-    #     plot_learning_curve(x, score_history, figure_file)
