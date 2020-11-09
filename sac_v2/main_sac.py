@@ -39,9 +39,7 @@ if __name__ == "__main__":
             n_actions=env.action_space.shape[0],
         )
 
-        # env = wrappers.Monitor(
-        #     env, "tmp/video", video_callable=lambda episode_id: True, force=True
-        # )
+        env = gym.wrappers.Monitor(env, "tmp/video", force=True)
 
         wandb.watch(
             [
