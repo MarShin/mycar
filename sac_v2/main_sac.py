@@ -37,6 +37,7 @@ if __name__ == "__main__":
             input_dims=env.observation_space.shape,
             env=env,
             n_actions=env.action_space.shape[0],
+            *config
         )
 
         env = gym.wrappers.Monitor(env, "tmp/video", force=True)
@@ -90,7 +91,7 @@ if __name__ == "__main__":
                 }
             )
 
-        # WHEN DONE TRIANING
+        # WHEN DONE TRIANING TODO: ake it save periodically
         # Save the model in the exchangeable ONNX format
         print("SAVING MODELS AFTER TRAINING..")
         print("OBSERVATION", observation)

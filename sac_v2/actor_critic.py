@@ -10,11 +10,11 @@ from networks import ActorNetwork, CriticNetwork
 class Agent:
     def __init__(
         self,
-        alpha=0.2,
         input_dims=[8],
         env=None,
-        gamma=0.99,
         n_actions=2,
+        alpha=0.2,        
+        gamma=0.99,
         max_size=1_000_000,
         tau=0.005,
         lr=1e-3,
@@ -71,16 +71,6 @@ class Agent:
     def update_network_parameters(self, tau=None):
         if tau is None:
             tau = self.tau
-
-        # target_c1_params = self.target_critic_1.named_parameters()
-        # target_c2_params = self.target_critic_2.named_parameters()
-        # c1_params = self.critic_1.named_parameters()
-        # c2_params = self.critic_2.named_parameters()
-
-        # target_c1_state_dict = dict(target_c1_params)
-        # target_c2_state_dict = dict(target_c2_params)
-        # c1_state_dict = dict(c1_params)
-        # c2_state_dict = dict(c2_params)
 
         self.soft_update(source=self.critic_1, target=self.target_critic_1, tau=tau)
         self.soft_update(source=self.critic_2, target=self.target_critic_2, tau=tau)
@@ -144,6 +134,10 @@ class Agent:
         loss_p = (self.alpha * log_probs_ - q).mean()
 
         # TODO: log log_probs_ & action_
+        wandb.log({
+                "log_probs_": log_probs_,
+                "action_": action_,
+            })
         return loss_p
 
     def learn(self):
