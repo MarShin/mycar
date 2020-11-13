@@ -13,7 +13,8 @@ from tqdm import tqdm
 if __name__ == "__main__":
     config = dict(
         n_games=10,
-        env_name="InvertedPendulumBulletEnv-v0",
+        # env_name="InvertedPendulumBulletEnv-v0",
+        env_name = "AntBulletEnv-v0",
         alpha=0.2,
         gamma=0.99,
         max_size=1_000_000,
@@ -37,7 +38,7 @@ if __name__ == "__main__":
             input_dims=env.observation_space.shape,
             env=env,
             n_actions=env.action_space.shape[0],
-            *config
+            # *config
         )
 
         env = gym.wrappers.Monitor(env, "tmp/video", force=True)
@@ -70,7 +71,7 @@ if __name__ == "__main__":
                 agent.remember(observation, action, reward, observation_, done)
 
                 if not load_checkpoint:
-                    loss_q, loss_q1, loss_q2, loss_p = agent.learn()
+                    loss_q, loss_q1, loss_q2, loss_p, log_probs_, action_ = agent.learn()
                 observation = observation_
             score_history.append(score)
             avg_score = np.mean(score_history[-100:])
@@ -88,6 +89,8 @@ if __name__ == "__main__":
                     "loss_q1": loss_q1,
                     "loss_q2": loss_q2,
                     "loss_p": loss_p,
+                    "p_log_probs_": log_probs_,
+                    "p_action_": action_,
                 }
             )
 

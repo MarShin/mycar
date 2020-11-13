@@ -133,12 +133,8 @@ class Agent:
         # Entropy-regularized policy loss
         loss_p = (self.alpha * log_probs_ - q).mean()
 
-        # TODO: log log_probs_ & action_
-        wandb.log({
-                "log_probs_": log_probs_,
-                "action_": action_,
-            })
-        return loss_p
+        
+        return loss_p, log_probs_, action_
 
     def learn(self):
         if self.memory.mem_cntr < self.batch_size:
@@ -168,12 +164,12 @@ class Agent:
         # backprop actor network
         # TODO: freeze gradients of 2 Q networks when updating policy
         self.actor.optimizer.zero_grad()
-        loss_p = self.compute_p_loss(reward, done, state, state_, action)
+        loss_p, log_probs_, action_ = self.compute_p_loss(reward, done, state, state_, action)
         loss_p.backward()
         self.actor.optimizer.step()
 
         # update target netowrks
         self.update_network_parameters()
 
-        return loss_q, loss_q1, loss_q2, loss_p
+        return loss_q, loss_q1, loss_q2, loss_p, log_probs_, action_
 
