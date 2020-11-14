@@ -14,7 +14,7 @@ if __name__ == "__main__":
     config = dict(
         n_games=10,
         # env_name="InvertedPendulumBulletEnv-v0",
-        env_name = "AntBulletEnv-v0",
+        env_name="AntBulletEnv-v0",
         alpha=0.2,
         gamma=0.99,
         max_size=1_000_000,
@@ -71,7 +71,14 @@ if __name__ == "__main__":
                 agent.remember(observation, action, reward, observation_, done)
 
                 if not load_checkpoint:
-                    loss_q, loss_q1, loss_q2, loss_p, log_probs_, action_ = agent.learn()
+                    (
+                        loss_q,
+                        loss_q1,
+                        loss_q2,
+                        loss_p,
+                        log_probs_,
+                        action_,
+                    ) = agent.learn()
                 observation = observation_
             score_history.append(score)
             avg_score = np.mean(score_history[-100:])
