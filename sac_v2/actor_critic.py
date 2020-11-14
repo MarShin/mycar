@@ -172,5 +172,5 @@ class Agent:
         # update target netowrks
         self.update_network_parameters()
 
-        return (loss_q, loss_q1, loss_q2, loss_p, log_probs_, action_)
+        return (loss_q.cpu(), loss_q1.cpu(), loss_q2.cpu(), loss_p.cpu(), log_probs_.cpu(), action_.cpu())
 

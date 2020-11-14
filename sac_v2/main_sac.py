@@ -12,7 +12,7 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     config = dict(
-        n_games=10,
+        n_games=500,
         # env_name="InvertedPendulumBulletEnv-v0",
         env_name="AntBulletEnv-v0",
         alpha=0.2,
