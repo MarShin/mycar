@@ -1,7 +1,7 @@
 import pybullet_envs
 import gym
 import numpy as np
-import torch
+import torch as T
 
 from actor_critic import Agent
 from gym import wrappers
@@ -106,27 +106,30 @@ if __name__ == "__main__":
         print("SAVING MODELS AFTER TRAINING..")
         print("OBSERVATION", observation)
         print("\nACTION", action)
-        torch.onnx.export(
-            agent.actor, (torch.from_numpy(observation).float()), "actor.onnx"
+        device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
+        T.onnx.export(
+            agent.actor,
+            T.tensor(observation, dtype=T.float, device=device),
+            "actor.onnx",
         )
 
         state, action, reward, new_state, done = agent.memory.sample_buffer(
             config.batch_size
         )
-        torch.onnx.export(
+        T.onnx.export(
             agent.critic_1,
             (
-                torch.tensor(state, dtype=torch.float),
-                torch.tensor(action, dtype=torch.float),
+                T.tensor(state, dtype=T.float, device=device),
+                T.tensor(action, dtype=T.float, device=device),
             ),
             "critic_1.onnx",
         )
 
-        torch.onnx.export(
+        T.onnx.export(
             agent.critic_2,
             (
-                torch.tensor(state, dtype=torch.float),
-                torch.tensor(action, dtype=torch.float),
+                T.tensor(state, dtype=T.float, device=device),
+                T.tensor(action, dtype=T.float, device=device),
             ),
             "critic_2.onnx",
         )
