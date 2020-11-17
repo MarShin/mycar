@@ -134,9 +134,29 @@ if __name__ == "__main__":
             "critic_2.onnx",
         )
 
+        T.onnx.export(
+            agent.target_critic_1,
+            (
+                T.tensor(state, dtype=T.float, device=device),
+                T.tensor(action, dtype=T.float, device=device),
+            ),
+            "target_critic_1.onnx",
+        )
+
+        T.onnx.export(
+            agent.target_critic_2,
+            (
+                T.tensor(state, dtype=T.float, device=device),
+                T.tensor(action, dtype=T.float, device=device),
+            ),
+            "target_critic_2.onnx",
+        )
+
         wandb.save("actor.onnx")
         wandb.save("critic_1.onnx")
         wandb.save("critic_2.onnx")
+        wandb.save("target_critic_1.onnx")
+        wandb.save("target_critic_2.onnx")
 
     # TEST MODE
     if load_checkpoint:
