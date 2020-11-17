@@ -10,18 +10,18 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     config = dict(
-        n_games=30,
+        n_games=250,
         # env_name="InvertedPendulumBulletEnv-v0",
         env_name="AntBulletEnv-v0",
-        alpha=0.2,
+        alpha=0.2,  # 1/reward_scale
         gamma=0.99,
         max_size=1_000_000,
         tau=0.005,
-        lr=1e-3,
+        lr=3e-4,
         layer1_size=256,
         layer2_size=256,
         batch_size=256,
-        reward_scale=2,
+        reward_scale=5,
     )
 
     with wandb.init(
@@ -36,7 +36,15 @@ if __name__ == "__main__":
             input_dims=env.observation_space.shape,
             env=env,
             n_actions=env.action_space.shape[0],
-            # *config
+            alpha=config["alpha"],
+            gamma=config["gamma"],
+            max_size=config["max_size"],
+            tau=config["tau"],
+            lr=config["lr"],
+            layer1_size=config["layer1_size"],
+            layer2_size=config["layer2_size"],
+            batch_size=config["batch_size"],
+            reward_scale=config["reward_scale"],
         )
 
         env = gym.wrappers.Monitor(env, "tmp/video", force=True)
