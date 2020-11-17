@@ -36,3 +36,4 @@ MANIFEST.in
 **/archive/
 **/wandb/
 *.onnx
+*/tmp/*
