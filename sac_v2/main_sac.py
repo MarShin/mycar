@@ -10,7 +10,7 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     config = dict(
-        n_games=250,
+        n_games=1000,
         # env_name="InvertedPendulumBulletEnv-v0",
         env_name="AntBulletEnv-v0",
         alpha=0.2,  # 1/reward_scale
@@ -24,6 +24,16 @@ if __name__ == "__main__":
         reward_scale=5,
     )
 
+    env = gym.make(config["env_name"])
+    # record videos of the agent playing the game
+    env = gym.wrappers.Monitor(
+        env,
+        "tmp/video",
+        video_callable=(lambda episode_id: episode_id % 10 == 0),
+        force=True,
+    )
+    # env = gym.wrappers.Monitor(env, "tmp/video", force=True)
+
     with wandb.init(
         project="trashbot-sac",
         tags=[config["env_name"]],
@@ -31,7 +41,7 @@ if __name__ == "__main__":
         monitor_gym=True,
     ):
         config = wandb.config
-        env = gym.make(config.env_name)
+
         agent = Agent(
             input_dims=env.observation_space.shape,
             env=env,
@@ -46,8 +56,6 @@ if __name__ == "__main__":
             batch_size=config["batch_size"],
             reward_scale=config["reward_scale"],
         )
-
-        env = gym.wrappers.Monitor(env, "tmp/video", force=True)
 
         wandb.watch(
             [
