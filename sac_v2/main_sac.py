@@ -8,11 +8,9 @@ from gym import wrappers
 import wandb
 from tqdm import tqdm
 
-# from tqdm.notebook import tqdm
-
 if __name__ == "__main__":
     config = dict(
-        n_games=500,
+        n_games=30,
         # env_name="InvertedPendulumBulletEnv-v0",
         env_name="AntBulletEnv-v0",
         alpha=0.2,
@@ -85,8 +83,6 @@ if __name__ == "__main__":
 
             if avg_score > best_score:
                 best_score = avg_score
-                # if not load_checkpoint:
-                #     agent.save_model()
             print(f"episode {i} score {score} avg_score {avg_score}")
             wandb.log(
                 {

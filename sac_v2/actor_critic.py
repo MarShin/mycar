@@ -66,7 +66,7 @@ class Agent:
         self.memory.store_transition(state, action, reward, new_state, done)
 
     def soft_update(self, source, target, tau):
-        with torch.no_grad():
+        with T.no_grad():
             for param, target_param in zip(source.parameters(), target.parameters()):
                 target_param.data.copy_(
                     target_param.data * (1.0 - tau) + param.data * tau
@@ -97,19 +97,18 @@ class Agent:
 
     def compute_q_loss(self, reward, done, state, state_, action):
 
-        q1 = self.critic_1.forward(state, action).view(-1)
-        q2 = self.critic_2.forward(state, action).view(-1)
-        #         print('q1 size', q1.size(), '\n')
+        q1 = self.critic_1.forward(state, action)
+        q2 = self.critic_2.forward(state, action)
 
         with T.no_grad():
-            # target action from the CURRENT plicy
+            # target action from the CURRENT policy
             action_, log_probs_ = self.actor.sample_normal(state, reparameterize=False)
             log_probs_ = log_probs_.view(-1)
 
             # target Q values
-            q1_targ = self.target_critic_1(state_, action_).view(-1)
-            q2_targ = self.target_critic_2(state_, action_).view(-1)
-            q_targ = T.min(q1_targ, q2_targ)
+            q1_targ = self.target_critic_1(state_, action_)
+            q2_targ = self.target_critic_2(state_, action_)
+            q_targ = T.min(q1_targ, q2_targ).view(-1)
             #             print('q_targ size', q_targ.size(), '\n')
             backup = reward + self.gamma * (1 - done) * (
                 q_targ - self.alpha * log_probs_
