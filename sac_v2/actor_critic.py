@@ -145,7 +145,7 @@ class Agent:
 
     def learn(self):
         if self.memory.mem_cntr < self.batch_size:
-            return None, None, None, None, None, None, None
+            return None, None, None, None, None
 
         # sample from Replay Buffer
         state, action, reward, new_state, done = self.memory.sample_buffer(
@@ -186,7 +186,5 @@ class Agent:
             loss_q1.detach(),
             loss_q2.detach(),
             loss_p.detach(),
-            log_probs_.detach(),
-            action_.detach(),
         )
 

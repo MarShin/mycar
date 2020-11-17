@@ -77,15 +77,7 @@ if __name__ == "__main__":
                 agent.remember(observation, action, reward, observation_, done)
 
                 if not load_checkpoint:
-                    (
-                        q_info,
-                        loss_q,
-                        loss_q1,
-                        loss_q2,
-                        loss_p,
-                        log_probs_,
-                        action_,
-                    ) = agent.learn()
+                    (q_info, loss_q, loss_q1, loss_q2, loss_p,) = agent.learn()
                 observation = observation_
             score_history.append(score)
             avg_score = np.mean(score_history[-100:])
@@ -102,8 +94,6 @@ if __name__ == "__main__":
                     "loss_q2": loss_q2,
                     "loss_p": loss_p,
                     "q_info": q_info,
-                    "p_log_probs_": log_probs_,
-                    "p_action_": action_,
                 }
             )
 
