@@ -79,46 +79,24 @@ class Agent:
         self.soft_update(source=self.critic_1, target=self.target_critic_1, tau=tau)
         self.soft_update(source=self.critic_2, target=self.target_critic_2, tau=tau)
 
-    def save_model(self):
-        print("... saving models ...")
-        self.actor.save_checkpoint()
-        self.critic_1.save_checkpoint()
-        self.critic_2.save_checkpoint()
-        self.target_critic_1.save_checkpoint()
-        self.target_critic_2.save_checkpoint()
-
-    def load_models(self):
-        print("... loading models ...")
-        self.actor.load_checkpoint()
-        self.critic_1.load_checkpoint()
-        self.critic_2.load_checkpoint()
-        self.target_critic_1.load_checkpoint()
-        self.target_critic_2.load_checkpoint()
-
     def compute_q_loss(self, reward, done, state, state_, action):
 
-        q1 = self.critic_1.forward(state, action)
-        q2 = self.critic_2.forward(state, action)
+        q1 = self.critic_1.forward(state, action).view(-1)
+        q2 = self.critic_2.forward(state, action).view(-1)
 
-        with T.no_grad():
-            # target action from the CURRENT policy
-            action_, log_probs_ = self.actor.sample_normal(state, reparameterize=False)
-            log_probs_ = log_probs_.view(-1)
+        # target action from the CURRENT policy
+        action_, log_probs_ = self.actor.sample_normal(state, reparameterize=False)
+        log_probs_ = log_probs_.view(-1)
 
-            # target Q values
-            q1_targ = self.target_critic_1(state_, action_)
-            q2_targ = self.target_critic_2(state_, action_)
-            q_targ = T.min(q1_targ, q2_targ).view(-1)
-            #             print('q_targ size', q_targ.size(), '\n')
-            backup = reward + self.gamma * (1 - done) * (
-                q_targ - self.alpha * log_probs_
-            )
-        #             print('log_probs_ size', log_probs_.size())
-        #             print('backup size', backup.size(), '\n')
+        # target Q values
+        q1_targ = self.target_critic_1(state_, action_)
+        q2_targ = self.target_critic_2(state_, action_)
+        q_targ = T.min(q1_targ, q2_targ).view(-1)
 
-        #         broadcasting error
-        loss_q1 = F.mse_loss(q1, backup)
-        loss_q2 = F.mse_loss(q2, backup)
+        backup = self.scale * reward + self.gamma * (1 - done) * (q_targ - log_probs_)
+
+        loss_q1 = 0.5 * F.mse_loss(q1, backup)
+        loss_q2 = 0.5 * F.mse_loss(q2, backup)
         loss_q = loss_q1 + loss_q2
 
         # Useful info for logging
@@ -139,7 +117,7 @@ class Agent:
         q = q.view(-1)
 
         # Entropy-regularized policy loss
-        loss_p = (self.alpha * log_probs_ - q).mean()
+        loss_p = T.mean(log_probs_ - q)
 
         return loss_p, log_probs_, action_
 
