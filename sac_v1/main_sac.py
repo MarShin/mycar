@@ -4,7 +4,6 @@ import numpy as np
 
 from actor_critic import Agent
 
-# from utils import plot_learning_curve
 from gym import wrappers
 import wandb
 from tqdm import tqdm
@@ -95,8 +94,3 @@ if __name__ == "__main__":
                     "value_loss": value_loss,
                 }
             )
-
-    if not load_checkpoint:
-        x = [i + 1 for i in range(n_games)]
-        plot_learning_curve(x, score_history, figure_file)
-
