@@ -78,6 +78,7 @@ if __name__ == "__main__":
 
                 if not load_checkpoint:
                     (
+                        q_info,
                         loss_q,
                         loss_q1,
                         loss_q2,
@@ -100,6 +101,7 @@ if __name__ == "__main__":
                     "loss_q1": loss_q1,
                     "loss_q2": loss_q2,
                     "loss_p": loss_p,
+                    "q_info", q_info,
                     "p_log_probs_": log_probs_,
                     "p_action_": action_,
                 }

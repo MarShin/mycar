@@ -122,7 +122,9 @@ class Agent:
         loss_q = loss_q1 + loss_q2
 
         # Useful info for logging
-        q_info = dict(Q1Vals=q1.detach().numpy(), Q2Vals=q2.detach().numpy())
+        q_info = dict(
+            Q1Vals=q1.cpu().detach().numpy(), Q2Vals=q2.cpu().detach().numpy()
+        )
 
         return loss_q, loss_q1, loss_q2, q_info
 
