@@ -59,6 +59,7 @@ class Agent:
         state = T.Tensor([observation]).to(self.actor.device)
         actions, _ = self.actor.sample_normal(state, reparameterize=False)
 
+        # pytorch magic syntax
         return actions.cpu().detach().numpy()[0]
 
     def remember(self, state, action, reward, new_state, done):
@@ -118,7 +119,10 @@ class Agent:
         loss_q2 = F.mse_loss(q2, backup)
         loss_q = loss_q1 + loss_q2
 
-        return loss_q, loss_q1, loss_q2
+        # Useful info for logging
+        q_info = dict(Q1Vals=q1.detach().numpy(), Q2Vals=q2.detach().numpy())
+
+        return loss_q, loss_q1, loss_q2, q_info
 
     def compute_p_loss(self, reward, done, state, state_, action):
         action_, log_probs_ = self.actor.sample_normal(state, reparameterize=True)
@@ -152,7 +156,7 @@ class Agent:
         # backprop 2 critic networks
         self.critic_1.optimizer.zero_grad()
         self.critic_2.optimizer.zero_grad()
-        loss_q, loss_q1, loss_q2 = self.compute_q_loss(
+        loss_q, loss_q1, loss_q2, q_info = self.compute_q_loss(
             reward, done, state, state_, action
         )
         loss_q.backward()
@@ -172,5 +176,12 @@ class Agent:
         # update target netowrks
         self.update_network_parameters()
 
-        return (loss_q.cpu(), loss_q1.cpu(), loss_q2.cpu(), loss_p.cpu(), log_probs_.cpu(), action_.cpu())
+        return (
+            loss_q.detach(),
+            loss_q1.detach(),
+            loss_q2.detach(),
+            loss_p.detach(),
+            log_probs_.detach(),
+            action_.detach(),
+        )
 

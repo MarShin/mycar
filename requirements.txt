@@ -1,3 +1,5 @@
+gym
+tqdm
 pybullet
 wandb
 torch
