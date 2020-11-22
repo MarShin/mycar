@@ -10,19 +10,16 @@ from tqdm import tqdm
 
 if __name__ == "__main__":
     config = dict(
-        n_games=1000,
-        # env_name="InvertedPendulumBulletEnv-v0",
+        n_games=250,
+        env_name="InvertedPendulumBulletEnv-v0",
         # env_name="AntBulletEnv-v0",
-        env_name="LunarLanderContinuous-v2",
-        alpha=0.2,  # 1/reward_scale
         gamma=0.99,
         max_size=1_000_000,
         tau=0.005,
-        lr=3e-4,
-        layer1_size=256,
-        layer2_size=256,
-        batch_size=256,
-        reward_scale=5,
+        lr=0.001,
+        layer1_size=400,
+        layer2_size=300,
+        batch_size=100,
     )
 
     env = gym.make(config["env_name"])
@@ -36,17 +33,16 @@ if __name__ == "__main__":
 
     with wandb.init(
         project="trashbot-sac",
-        tags=[config["env_name"]],
+        tags=[config["env_name"], "td3"],
         config=config,
         monitor_gym=True,
     ):
         config = wandb.config
 
         agent = Agent(
-            input_dims=env.observation_space.shape,
             env=env,
+            input_dims=env.observation_space.shape,
             n_actions=env.action_space.shape[0],
-            alpha=config["alpha"],
             gamma=config["gamma"],
             max_size=config["max_size"],
             tau=config["tau"],
@@ -54,7 +50,6 @@ if __name__ == "__main__":
             layer1_size=config["layer1_size"],
             layer2_size=config["layer2_size"],
             batch_size=config["batch_size"],
-            reward_scale=config["reward_scale"],
         )
 
         wandb.watch(
@@ -62,6 +57,7 @@ if __name__ == "__main__":
                 agent.actor,
                 agent.critic_1,
                 agent.critic_2,
+                agent.target_actor,
                 agent.target_critic_1,
                 agent.target_critic_2,
             ],
@@ -85,7 +81,7 @@ if __name__ == "__main__":
                 agent.remember(observation, action, reward, observation_, done)
 
                 if not load_checkpoint:
-                    (q_info, loss_q, loss_q1, loss_q2, loss_p,) = agent.learn()
+                    (loss_p, loss_q) = agent.learn()
                 observation = observation_
             score_history.append(score)
             avg_score = np.mean(score_history[-100:])
@@ -97,11 +93,8 @@ if __name__ == "__main__":
                 {
                     "score": score,
                     "avg_score": avg_score,
-                    "loss_q": loss_q,
-                    "loss_q1": loss_q1,
-                    "loss_q2": loss_q2,
                     "loss_p": loss_p,
-                    "q_info": q_info,
+                    "loss_q": loss_q,
                 }
             )
 
@@ -111,15 +104,16 @@ if __name__ == "__main__":
         print("OBSERVATION", observation)
         print("\nACTION", action)
         device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
+        state, action, reward, new_state, done = agent.memory.sample_buffer(
+            config.batch_size
+        )
+
         T.onnx.export(
             agent.actor,
             T.tensor(observation, dtype=T.float, device=device),
             "actor.onnx",
         )
 
-        state, action, reward, new_state, done = agent.memory.sample_buffer(
-            config.batch_size
-        )
         T.onnx.export(
             agent.critic_1,
             (
@@ -136,6 +130,12 @@ if __name__ == "__main__":
                 T.tensor(action, dtype=T.float, device=device),
             ),
             "critic_2.onnx",
+        )
+
+        T.onnx.export(
+            agent.target_actor,
+            T.tensor(observation, dtype=T.float, device=device),
+            "target_actor.onnx",
         )
 
         T.onnx.export(
