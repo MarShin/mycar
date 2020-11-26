@@ -73,8 +73,6 @@ def main(config):
 
             if avg_score > best_score:
                 best_score = avg_score
-                if not load_checkpoint:
-                    agent.save_models()
 
             print("episode ", i, "score %.1f" % score, "avg_score %.1f" % avg_score)
             print(f"actor_loss: {actor_loss} \t critic_loss: {critic_loss}")
