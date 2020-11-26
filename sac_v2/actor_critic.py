@@ -66,11 +66,8 @@ class Agent:
         self.memory.store_transition(state, action, reward, new_state, done)
 
     def soft_update(self, source, target, tau):
-        with T.no_grad():
-            for param, target_param in zip(source.parameters(), target.parameters()):
-                target_param.data.copy_(
-                    target_param.data * (1.0 - tau) + param.data * tau
-                )
+        for param, target_param in zip(source.parameters(), target.parameters()):
+            target_param.data.copy_(target_param.data * (1.0 - tau) + param.data * tau)
 
     def update_network_parameters(self, tau=None):
         if tau is None:
