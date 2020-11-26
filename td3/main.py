@@ -8,20 +8,8 @@ from gym import wrappers
 import wandb
 from tqdm import tqdm
 
-if __name__ == "__main__":
-    config = dict(
-        n_games=250,
-        env_name="InvertedPendulumBulletEnv-v0",
-        # env_name="AntBulletEnv-v0",
-        gamma=0.99,
-        max_size=1_000_000,
-        tau=0.005,
-        lr=0.001,
-        layer1_size=400,
-        layer2_size=300,
-        batch_size=100,
-    )
 
+def main(config):
     env = gym.make(config["env_name"])
     # record videos of the agent playing the game
     env = gym.wrappers.Monitor(
@@ -166,3 +154,28 @@ if __name__ == "__main__":
     # if load_checkpoint:
     #     agent.load_models()
     #     env.render(mode="human")
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env", type=str, default="HalfCheetahBulletEnv-v0")
+    parser.add_argument("--n_games", type=int, default=1000)
+    args = parser.parse_args()
+
+    config = dict(
+        n_games=args.n_games,
+        # env_name="InvertedPendulumBulletEnv-v0",
+        # env_name="AntBulletEnv-v0",
+        # env_name="LunarLanderContinuous-v2",
+        env_name=args.env,
+        gamma=0.99,
+        max_size=1_000_000,
+        tau=0.005,
+        lr=0.001,
+        layer1_size=400,
+        layer2_size=300,
+        batch_size=100,
+    )
+    main(config)
