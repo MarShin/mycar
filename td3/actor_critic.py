@@ -85,11 +85,15 @@ class Agent:
         self.update_network_parameters(tau=1)
 
     def choose_action(self, observation):
+        mu = None
         if self.time_step < self.warmup:
-            mu = T.tensor(np.random.normal(scale=self.noise, size=(self.n_actions,)))
+            mu = T.tensor(
+                np.random.normal(scale=self.noise, size=(self.n_actions,))
+            ).to(self.actor.device)
         else:
             state = T.tensor(observation, dtype=T.float).to(self.actor.device)
             mu = self.actor.forward(state).to(self.actor.device)
+
         mu_prime = mu + T.tensor(np.random.normal(scale=self.noise), dtype=T.float).to(
             self.actor.device
         )
