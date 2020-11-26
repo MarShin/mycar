@@ -8,23 +8,8 @@ from gym import wrappers
 import wandb
 from tqdm import tqdm
 
-if __name__ == "__main__":
 
-    config = dict(
-        n_games=500,
-        # env_name="InvertedPendulumBulletEnv-v0",
-        env_name="AntBulletEnv-v0",
-        alpha=0.2,
-        gamma=0.99,
-        max_size=1_000_000,
-        tau=0.005,
-        lr=1e-3,
-        layer1_size=256,
-        layer2_size=256,
-        batch_size=256,
-        reward_scale=2,
-    )
-
+def main(config):
     with wandb.init(
         project="trashbot-sac",
         tags=[config["env_name"], "v1"],
@@ -37,7 +22,16 @@ if __name__ == "__main__":
             input_dims=env.observation_space.shape,
             env=env,
             n_actions=env.action_space.shape[0],
-            # *config
+            alpha=config["alpha"],
+            beta=config["beta"],
+            gamma=config["gamma"],
+            max_size=config["max_size"],
+            tau=config["tau"],
+            lr=config["lr"],
+            layer1_size=config["layer1_size"],
+            layer2_size=config["layer2_size"],
+            batch_size=config["batch_size"],
+            reward_scale=config["reward_scale"],
         )
 
         env = gym.wrappers.Monitor(env, "tmp/video", force=True)
@@ -94,3 +88,31 @@ if __name__ == "__main__":
                     "value_loss": value_loss,
                 }
             )
+
+
+if __name__ == "__main__":
+    import argparse
+
+    parser = argparse.ArgumentParser()
+    parser.add_argument("--env", type=str, default="HalfCheetahBulletEnv-v0")
+    parser.add_argument("--n_games", type=int, default=1000)
+    args = parser.parse_args()
+
+    config = dict(
+        n_games=args.n_games,
+        # env_name="InvertedPendulumBulletEnv-v0",
+        # env_name="AntBulletEnv-v0",
+        # env_name="LunarLanderContinuous-v2",
+        env_name=args.env,
+        alpha=0.0003,
+        beta=0.0003,
+        gamma=0.99,
+        max_size=1_000_000,
+        tau=0.005,
+        lr=3e-4,
+        layer1_size=256,
+        layer2_size=256,
+        batch_size=256,
+        reward_scale=5,
+    )
+    main(config)
