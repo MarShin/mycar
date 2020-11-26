@@ -27,7 +27,6 @@ def main(config):
             gamma=config["gamma"],
             max_size=config["max_size"],
             tau=config["tau"],
-            lr=config["lr"],
             layer1_size=config["layer1_size"],
             layer2_size=config["layer2_size"],
             batch_size=config["batch_size"],
