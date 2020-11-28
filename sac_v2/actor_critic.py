@@ -56,7 +56,7 @@ class Agent:
             actions, _ = self.actor.sample_normal(state, reparameterize=False)
 
             # pytorch magic syntax: .cpu().detach().numpy()[0]
-            return actions.detach().numpy()[0]
+            return actions.cpu().detach().numpy()[0]
 
     def remember(self, state, action, reward, new_state, done):
         self.memory.store_transition(state, action, reward, new_state, done)
@@ -97,8 +97,10 @@ class Agent:
         loss_q2 = F.mse_loss(q2, backup)
         loss_q = loss_q1 + loss_q2
 
-        # Useful info for logging TODO: do we reli need cpu()
-        q_info = dict(Q1Vals=q1.detach().numpy(), Q2Vals=q2.detach().numpy())
+        # Useful info for logging
+        q_info = dict(
+            Q1Vals=q1.cpu().detach().numpy(), Q2Vals=q2.cpu().detach().numpy()
+        )
 
         return loss_q, loss_q1, loss_q2, q_info
 
@@ -114,7 +116,7 @@ class Agent:
         loss_pi = T.mean(self.alpha * log_probs_ - q)
 
         # Useful info for logging
-        pi_info = dict(LogPi=log_probs_.detach().numpy())
+        pi_info = dict(LogPi=log_probs_.cpu().detach().numpy())
 
         return loss_pi, pi_info
 
