@@ -28,9 +28,10 @@ def main(config):
         config = wandb.config
 
         agent = Agent(
-            input_dims=env.observation_space.shape,
             env=env,
-            n_actions=env.action_space.shape[0],
+            input_dims=env.observation_space.shape,
+            act_dims=env.action_space.shape[0],
+            act_limit=env.action_space.high[0],
             alpha=config["alpha"],
             gamma=config["gamma"],
             max_size=config["max_size"],
@@ -39,7 +40,6 @@ def main(config):
             layer1_size=config["layer1_size"],
             layer2_size=config["layer2_size"],
             batch_size=config["batch_size"],
-            reward_scale=config["reward_scale"],
         )
 
         wandb.watch(
@@ -70,7 +70,7 @@ def main(config):
                 agent.remember(observation, action, reward, observation_, done)
 
                 if not load_checkpoint:
-                    (q_info, loss_q, loss_q1, loss_q2, loss_p,) = agent.learn()
+                    (q_info, pi_info, loss_q, loss_q1, loss_q2, loss_p,) = agent.learn()
                 observation = observation_
             score_history.append(score)
             avg_score = np.mean(score_history[-100:])
@@ -87,6 +87,7 @@ def main(config):
                     "loss_q2": loss_q2,
                     "loss_p": loss_p,
                     "q_info": q_info,
+                    "pi_info": pi_info,
                 }
             )
 
@@ -175,6 +176,5 @@ if __name__ == "__main__":
         layer1_size=256,
         layer2_size=256,
         batch_size=256,
-        reward_scale=5,
     )
     main(config)

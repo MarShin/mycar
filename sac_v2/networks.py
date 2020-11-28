@@ -9,26 +9,17 @@ import numpy as np
 
 class CriticNetwork(nn.Module):
     def __init__(
-        self,
-        lr,
-        input_dims,
-        n_actions,
-        fc1_dims=256,
-        fc2_dims=256,
-        name="critic",
-        chkpt_dir="tmp/sac",
+        self, lr, input_dims, act_dims, fc1_dims=256, fc2_dims=256, name="critic",
     ):
-        super(CriticNetwork, self).__init__()
+        super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
-        self.n_actions = n_actions
+        self.act_dims = act_dims
         self.name = name
-        self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name + "_sac")
 
         # TODO: just the [0] dim of state is good enough?
-        self.fc1 = nn.Linear(self.input_dims[0] + n_actions, self.fc1_dims)
+        self.fc1 = nn.Linear(self.input_dims[0] + act_dims, self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
         self.q = nn.Linear(self.fc2_dims, 1)
 
@@ -45,13 +36,11 @@ class CriticNetwork(nn.Module):
 
         q = self.q(action_value)
 
-        return q
+        return T.squeeze(q, -1)
 
-    def save_checkpoint(self):
-        T.save(self.state_dict(), self.checkpoint_file)
 
-    def load_checkpoint(self):
-        self.load_state_dict(T.load(self.checkpoint_file))
+LOG_STD_MAX = 2
+LOG_STD_MIN = -20
 
 
 class ActorNetwork(nn.Module):
@@ -59,28 +48,26 @@ class ActorNetwork(nn.Module):
         self,
         lr,
         input_dims,
-        max_action,
+        act_dims,
+        act_limit,
         fc1_dims=256,
         fc2_dims=256,
-        n_actions=2,
         name="actor",
-        chkpt_dir="tmp/sac",
     ):
-        super(ActorNetwork, self).__init__()
+        super().__init__()
         self.input_dims = input_dims
         self.fc1_dims = fc1_dims
         self.fc2_dims = fc2_dims
-        self.n_actions = n_actions
+        self.act_dims = act_dims
         self.name = name
-        self.checkpoint_dir = chkpt_dir
-        self.checkpoint_file = os.path.join(self.checkpoint_dir, name + "_sac")
-        self.max_action = max_action
+        self.act_limit = act_limit
         self.reparam_noise = 1e-6
 
-        self.fc1 = nn.Linear(*self.input_dims, self.fc1_dims)
+        self.fc1 = nn.Linear(self.input_dims[0], self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)
-        self.mu = nn.Linear(self.fc2_dims, self.n_actions)
-        self.sigma = nn.Linear(self.fc2_dims, self.n_actions)
+        self.mu = nn.Linear(self.fc2_dims, self.act_dims)
+        # self.sigma = nn.Linear(self.fc2_dims, self.act_dims)
+        self.log_std = nn.Linear(self.fc2_dims, self.act_dims)
 
         self.optimizer = optim.Adam(self.parameters(), lr=lr)
         self.device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
@@ -94,37 +81,56 @@ class ActorNetwork(nn.Module):
         prob = F.relu(prob)
 
         mu = self.mu(prob)
-        sigma = self.sigma(prob)
+        log_std = self.log_std(prob)
+        log_std = T.clamp(log_std, LOG_STD_MIN, LOG_STD_MAX)
+        sigma = T.exp(log_std)
 
         # clamp sigma coz can't have infite wide distribution
         # TODO: see how spinningup is clamping - normal the linear multiply noise?
         # instead of [-20, +2] as used in paper
-        sigma = T.clamp(sigma, min=self.reparam_noise, max=1)
+        # sigma = T.clamp(sigma, min=self.reparam_noise, max=1)
 
         return mu, sigma
 
-    def sample_normal(self, state, reparameterize=True):
+    def sample_normal(self, state, reparameterize=True, deterministic=False):
         mu, sigma = self.forward(state)
-        probabilities = Normal(mu, sigma)
+        pi_dist = Normal(mu, sigma)
 
-        if reparameterize:
-            actions = probabilities.rsample()
+        if deterministic:
+            # Only used for evaluating policy at test time.
+            pi_action = mu
         else:
-            actions = probabilities.sample()
+            pi_action = pi_dist.rsample()
 
         # action here is scaled to the env max action space as Tanh outputs [-1,+1]
-        # this is SAC enforcing action bounds on reparam vector
-        # TODO: check appendix C; SpinningUp have a 'better' approach
-        action = T.tanh(actions) * T.tensor(self.max_action).to(self.device)
-        log_probs = probabilities.log_prob(actions)
-        log_probs -= T.log(1 - action.pow(2) + self.reparam_noise)
-        log_probs = log_probs.sum(1, keepdim=True)
 
-        return action, log_probs
+        # for more details check paper v2 appendix C
+        # SpinningUp & RLKit have a more numerical stable approach
+        # Adapted from
+        # https://github.com/tensorflow/probability/blob/master/tensorflow_probability/python/bijectors/tanh.py#L73
 
-    def save_checkpoint(self):
-        T.save(self.state_dict(), self.checkpoint_file)
+        # This formula is mathematically equivalent to log(1 - tanh(x)^2).
 
-    def load_checkpoint(self):
-        self.load_state_dict(T.load(self.checkpoint_file))
+        # Derivation:
+        # log(1 - tanh(x)^2)
+        #  = log(sech(x)^2)
+        #  = 2 * log(sech(x))
+        #  = 2 * log(2e^-x / (e^-2x + 1))
+        #  = 2 * (log(2) - x - log(e^-2x + 1))
+        #  = 2 * (log(2) - x - softplus(-2x))
+        if reparameterize:
+            logp_pi = pi_dist.log_prob(pi_action).sum(axis=-1)
+            logp_pi -= (2 * (np.log(2) - pi_action - F.softplus(-2 * pi_action))).sum(
+                axis=1
+            )
+        else:
+            logp_pi = None
 
+        # action = T.tanh(actions) * T.tensor(self.act_limit).to(self.device)
+        # log_probs = pi_dist.log_prob(actions)
+        # log_probs -= T.log(1 - action.pow(2) + self.reparam_noise)
+        # log_probs = log_probs.sum(1, keepdim=True)
+
+        pi_action = T.tanh(pi_action)
+        pi_action = self.act_limit * pi_action
+        return pi_action, logp_pi
