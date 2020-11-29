@@ -21,7 +21,7 @@ def main(config):
 
     with wandb.init(
         project="trashbot-sac",
-        tags=[config["env_name"]],
+        tags=[config["env_name"], "v2"],
         config=config,
         monitor_gym=True,
     ):
@@ -172,7 +172,7 @@ if __name__ == "__main__":
         gamma=0.99,
         max_size=1_000_000,
         tau=0.005,
-        lr=3e-4,
+        lr=1e-3,  # instead of 3e-4
         layer1_size=256,
         layer2_size=256,
         batch_size=256,
