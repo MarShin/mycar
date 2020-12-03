@@ -155,7 +155,7 @@ class Agent:
         self.learn_step_cntr += 1
 
         if self.learn_step_cntr % self.update_actor_interval != 0:
-            return None, None
+            return None, None, None
 
         self.actor.optimzier.zero_grad()
         actor_q1_loss = self.critic_1.forward(state, self.actor.forward(state))
