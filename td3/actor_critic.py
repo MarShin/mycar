@@ -107,7 +107,7 @@ class Agent:
 
     def learn(self):
         if self.memory.mem_cntr < self.batch_size:
-            return None, None
+            return None, None, None
         state, action, reward, new_state, done = self.memory.sample_buffer(
             self.batch_size
         )
@@ -164,7 +164,7 @@ class Agent:
         self.actor.optimzier.step()
 
         self.update_network_parameters()
-        return actor_loss.cpu().detach().numpy(), critic_loss.cpu().detach().numpy()
+        return actor_loss.detach(), critic_loss.detach(), target_actions.detach()
 
     def update_network_parameters(self, tau=None):
         if tau is None:

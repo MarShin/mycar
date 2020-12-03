@@ -69,7 +69,7 @@ def main(config):
                 agent.remember(observation, action, reward, observation_, done)
 
                 if not load_checkpoint:
-                    (loss_p, loss_q) = agent.learn()
+                    (loss_p, loss_q, target_actions) = agent.learn()
                 observation = observation_
             score_history.append(score)
             avg_score = np.mean(score_history[-100:])
@@ -83,6 +83,7 @@ def main(config):
                     "avg_score": avg_score,
                     "loss_p": loss_p,
                     "loss_q": loss_q,
+                    "target_actions": target_actions,
                 }
             )
 
