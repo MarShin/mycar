@@ -194,10 +194,10 @@ if __name__ == "__main__":
         lr=1e-3,  # instead of 3e-4
         layer1_size=256,
         layer2_size=256,
-        batch_size=256,
+        batch_size=100,
         start_steps=10000,
         steps_per_epoch=4000,
-        epochs=100,
+        epochs=200,
         update_every=50,
         max_ep_len=1000,  # dont' change usually depends on env time limit
         update_after=1000,
