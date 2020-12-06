@@ -137,9 +137,12 @@ def main(config):
 
             # end of episode reset
             if done or (ep_len == max_ep_len):
-                wandb.log(
-                    {"ep_len": ep_len, "ep_ret": ep_ret,}
-                )
+                logs = {
+                    "ep_len": ep_len,
+                    "ep_ret": ep_ret,
+                }
+                print(f"\nLogs: {logs}")
+                wandb.log(logs)
                 observation, ep_ret, ep_len = env.reset(), 0, 0
 
             # update agent
@@ -184,7 +187,7 @@ if __name__ == "__main__":
         # env_name="AntBulletEnv-v0",
         # env_name="LunarLanderContinuous-v2",
         env_name=args.env,
-        alpha=0.2,  # 1/reward_scale
+        alpha=0.4,  # 1/reward_scale
         gamma=0.99,
         max_size=1_000_000,
         tau=0.005,
