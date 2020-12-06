@@ -108,7 +108,6 @@ def main(config):
             [agent.actor, agent.critic_1, agent.critic_2,], log="all", log_freq=10,
         )
 
-        score_history = []
         # load_checkpoint = False
         total_steps = steps_per_epoch * epochs
         observation, ep_ret, ep_len = env.reset(), 0, 0
@@ -139,19 +138,18 @@ def main(config):
             # end of episode reset
             if done or (ep_len == max_ep_len):
                 wandb.log(
-                    {"ep_len": ep_len, "ep_ret": ep_ret, "avg_score": avg_score,}
+                    {"ep_len": ep_len, "ep_ret": ep_ret,}
                 )
                 observation, ep_ret, ep_len = env.reset(), 0, 0
 
             # update agent
             if i >= update_after and i % update_every == 0:
-                (q_info, pi_info, loss_q, loss_q1, loss_q2, loss_p,) = agent.learn()
+                for j in range(update_every):
+                    (q_info, pi_info, loss_q, loss_q1, loss_q2, loss_p,) = agent.learn()
 
             # end of epoch handling
             # TODO: save_model(agent, observation)
             if (i + 1) % steps_per_epoch == 0:
-                score_history.append(ep_ret)
-                avg_score = np.mean(score_history[-100:])
 
                 epoch = (i + 1) // steps_per_epoch
 
@@ -159,7 +157,6 @@ def main(config):
                     "TotalEnvInteracts": i,
                     "epoch": epoch,
                     "score": ep_ret,
-                    "avg_score": avg_score,
                     "loss_q": loss_q,
                     "loss_q1": loss_q1,
                     "loss_q2": loss_q2,
