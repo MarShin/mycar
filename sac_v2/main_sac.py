@@ -9,6 +9,60 @@ import wandb
 from tqdm import tqdm
 
 
+def save_model(agent, observation):
+    # Save the model in the exchangeable ONNX format
+    print("SAVING MODELS AFTER TRAINING..")
+    device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
+    T.onnx.export(
+        agent.actor, T.tensor(observation, dtype=T.float, device=device), "actor.onnx",
+    )
+
+    state, action, reward, new_state, done = agent.memory.sample_buffer(
+        config.batch_size
+    )
+    T.onnx.export(
+        agent.critic_1,
+        (
+            T.tensor(state, dtype=T.float, device=device),
+            T.tensor(action, dtype=T.float, device=device),
+        ),
+        "critic_1.onnx",
+    )
+
+    T.onnx.export(
+        agent.critic_2,
+        (
+            T.tensor(state, dtype=T.float, device=device),
+            T.tensor(action, dtype=T.float, device=device),
+        ),
+        "critic_2.onnx",
+    )
+
+    T.onnx.export(
+        agent.target_critic_1,
+        (
+            T.tensor(state, dtype=T.float, device=device),
+            T.tensor(action, dtype=T.float, device=device),
+        ),
+        "target_critic_1.onnx",
+    )
+
+    T.onnx.export(
+        agent.target_critic_2,
+        (
+            T.tensor(state, dtype=T.float, device=device),
+            T.tensor(action, dtype=T.float, device=device),
+        ),
+        "target_critic_2.onnx",
+    )
+
+    wandb.save("actor.onnx")
+    wandb.save("critic_1.onnx")
+    wandb.save("critic_2.onnx")
+    wandb.save("target_critic_1.onnx")
+    wandb.save("target_critic_2.onnx")
+
+
 def main(config):
     env = gym.make(config["env_name"])
     # record videos of the agent playing the game
@@ -18,6 +72,13 @@ def main(config):
         video_callable=(lambda episode_id: episode_id % 10 == 0),
         force=True,
     )
+
+    epochs = config["epochs"]
+    update_every = config["update_every"]
+    max_ep_len = config["max_ep_len"]
+    start_steps = config["start_steps"]
+    steps_per_epoch = config["steps_per_epoch"]
+    update_after = config["update_after"]
 
     with wandb.init(
         project="trashbot-sac",
@@ -43,115 +104,67 @@ def main(config):
         )
 
         wandb.watch(
-            [
-                agent.actor,
-                agent.critic_1,
-                agent.critic_2,
-                agent.target_critic_1,
-                agent.target_critic_2,
-            ],
-            log="all",
-            log_freq=10,
+            [agent.actor, agent.critic_1, agent.critic_2,], log="all", log_freq=10,
         )
 
-        best_score = env.reward_range[0]
         score_history = []
-        load_checkpoint = False
+        # load_checkpoint = False
+        total_steps = steps_per_epoch * epochs
+        observation, ep_ret, ep_len = env.reset(), 0, 0
 
-        for i in tqdm(range(config.n_games)):
+        # Main loop: collect experience in env and update/log each epoch
+        for i in tqdm(range(total_steps)):
 
-            observation = env.reset()
-            done = False
-            score = 0
-            while not done:
+            # Epsisode  # while not done:
+            if i > start_steps:
                 action = agent.choose_action(observation)
-                observation_, reward, done, info = env.step(action)
-                score += reward
-                agent.remember(observation, action, reward, observation_, done)
+            else:
+                action = env.action_space.sample()
 
-                if not load_checkpoint:
-                    (q_info, pi_info, loss_q, loss_q1, loss_q2, loss_p,) = agent.learn()
-                observation = observation_
-            score_history.append(score)
-            avg_score = np.mean(score_history[-100:])
+            observation_, reward, done, info = env.step(action)
+            ep_len += 1
+            ep_ret += reward
 
-            if avg_score > best_score:
-                best_score = avg_score
-            print(f"episode {i} score {score} avg_score {avg_score}")
-            wandb.log(
-                {
-                    "score": score,
-                    "avg_score": avg_score,
-                    "loss_q": loss_q,
-                    "loss_q1": loss_q1,
-                    "loss_q2": loss_q2,
-                    "loss_p": loss_p,
-                    "q_info": q_info,
-                    "pi_info": pi_info,
-                }
-            )
+            # Ignore the "done" signal if it comes from hitting the time
+            # horizon (that is, when it's an artificial terminal signal
+            # that isn't based on the agent's state)
+            done = False if ep_len == max_ep_len else done
 
-        # WHEN DONE TRIANING TODO: ake it save periodically
-        # Save the model in the exchangeable ONNX format
-        print("SAVING MODELS AFTER TRAINING..")
-        print("OBSERVATION", observation)
-        print("\nACTION", action)
-        device = T.device("cuda:0" if T.cuda.is_available() else "cpu")
-        T.onnx.export(
-            agent.actor,
-            T.tensor(observation, dtype=T.float, device=device),
-            "actor.onnx",
-        )
+            agent.remember(observation, action, reward, observation_, done)
 
-        state, action, reward, new_state, done = agent.memory.sample_buffer(
-            config.batch_size
-        )
-        T.onnx.export(
-            agent.critic_1,
-            (
-                T.tensor(state, dtype=T.float, device=device),
-                T.tensor(action, dtype=T.float, device=device),
-            ),
-            "critic_1.onnx",
-        )
+            observation = observation_
 
-        T.onnx.export(
-            agent.critic_2,
-            (
-                T.tensor(state, dtype=T.float, device=device),
-                T.tensor(action, dtype=T.float, device=device),
-            ),
-            "critic_2.onnx",
-        )
+            # end of episode reset
+            if done or (ep_len == max_ep_len):
+                observation, ep_ret, ep_len = env.reset(), 0, 0
 
-        T.onnx.export(
-            agent.target_critic_1,
-            (
-                T.tensor(state, dtype=T.float, device=device),
-                T.tensor(action, dtype=T.float, device=device),
-            ),
-            "target_critic_1.onnx",
-        )
+            # update agent
+            if i >= update_after and i % update_every == 0:
+                (q_info, pi_info, loss_q, loss_q1, loss_q2, loss_p,) = agent.learn()
 
-        T.onnx.export(
-            agent.target_critic_2,
-            (
-                T.tensor(state, dtype=T.float, device=device),
-                T.tensor(action, dtype=T.float, device=device),
-            ),
-            "target_critic_2.onnx",
-        )
+            # end of epoch handling
+            # TODO: save_model(agent, observation)
+            if (i + 1) % steps_per_epoch == 0:
+                score_history.append(ep_ret)
+                avg_score = np.mean(score_history[-100:])
 
-        wandb.save("actor.onnx")
-        wandb.save("critic_1.onnx")
-        wandb.save("critic_2.onnx")
-        wandb.save("target_critic_1.onnx")
-        wandb.save("target_critic_2.onnx")
+                print(f"episode {i} score {ep_ret} avg_score {avg_score}")
+                epoch = (i + 1) // steps_per_epoch
 
-    # # TEST MODE
-    # if load_checkpoint:
-    #     agent.load_models()
-    #     env.render(mode="human")
+                wandb.log(
+                    {
+                        "epoch": epoch,
+                        "score": ep_ret,
+                        "avg_score": avg_score,
+                        "loss_q": loss_q,
+                        "loss_q1": loss_q1,
+                        "loss_q2": loss_q2,
+                        "loss_p": loss_p,
+                        "q_info": q_info,
+                        "pi_info": pi_info,
+                        "env_info": info,
+                    }
+                )
 
 
 if __name__ == "__main__":
@@ -159,11 +172,11 @@ if __name__ == "__main__":
 
     parser = argparse.ArgumentParser()
     parser.add_argument("--env", type=str, default="HalfCheetahBulletEnv-v0")
-    parser.add_argument("--n_games", type=int, default=1000)
+    # parser.add_argument("--n_games", type=int, default=1000)
     args = parser.parse_args()
 
     config = dict(
-        n_games=args.n_games,
+        # n_games=args.n_games,
         # env_name="InvertedPendulumBulletEnv-v0",
         # env_name="AntBulletEnv-v0",
         # env_name="LunarLanderContinuous-v2",
@@ -176,5 +189,11 @@ if __name__ == "__main__":
         layer1_size=256,
         layer2_size=256,
         batch_size=256,
+        start_steps=10000,
+        steps_per_epoch=4000,
+        epochs=100,
+        update_every=50,
+        max_ep_len=1000,  # dont' change usually depends on env time limit
+        update_after=1000,
     )
     main(config)

@@ -61,7 +61,6 @@ class ActorNetwork(nn.Module):
         self.act_dims = act_dims
         self.name = name
         self.act_limit = act_limit
-        self.reparam_noise = 1e-6
 
         self.fc1 = nn.Linear(self.input_dims[0], self.fc1_dims)
         self.fc2 = nn.Linear(self.fc1_dims, self.fc2_dims)

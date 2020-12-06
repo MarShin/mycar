@@ -77,6 +77,8 @@ def main(config):
             if avg_score > best_score:
                 best_score = avg_score
             print(f"episode {i} score {score} avg_score {avg_score}")
+            print("loss_p, loss_q, target_actions")
+            print(loss_p, loss_q, target_actions)
             wandb.log(
                 {
                     "score": score,

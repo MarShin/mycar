@@ -5,6 +5,7 @@ import torch.nn.functional as F
 import numpy as np
 from buffer import ReplayBuffer
 from networks import ActorNetwork, CriticNetwork
+import itertools
 
 
 class Agent:
@@ -31,24 +32,32 @@ class Agent:
         self.act_dims = act_dims
 
         self.actor = ActorNetwork(
-            lr, input_dims, act_dims=act_dims, name="actor", act_limit=act_limit,
+            lr=lr,
+            input_dims=input_dims,
+            act_dims=act_dims,
+            act_limit=act_limit,
+            name="actor",
         )
 
         self.critic_1 = CriticNetwork(
-            lr, input_dims, act_dims=act_dims, name="critic_1"
+            lr=lr, input_dims=input_dims, act_dims=act_dims, name="critic_1"
         )
         self.critic_2 = CriticNetwork(
-            lr, input_dims, act_dims=act_dims, name="critic_2"
+            lr=lr, input_dims=input_dims, act_dims=act_dims, name="critic_2"
         )
         self.target_critic_1 = CriticNetwork(
-            lr, input_dims, act_dims=act_dims, name="target_critic_1"
+            lr=lr, input_dims=input_dims, act_dims=act_dims, name="target_critic_1"
         )
         self.target_critic_2 = CriticNetwork(
-            lr, input_dims, act_dims=act_dims, name="target_critic_2"
+            lr=lr, input_dims=input_dims, act_dims=act_dims, name="target_critic_2"
         )
 
         # hard update target network when fist init, afters soft update by tau
         self.update_network_parameters(tau=1)
+        self.q_params = itertools.chain(
+            self.critic_1.parameters(), self.critic_2.parameters()
+        )
+        self.q_optimizer = Adam(q_params, lr=lr)
 
     def choose_action(self, observation):
         with T.no_grad():
@@ -77,13 +86,12 @@ class Agent:
 
     def compute_q_loss(self, reward, done, state, state_, action):
 
-        q1 = self.critic_1.forward(state, action)
-        q2 = self.critic_2.forward(state, action)
+        q1 = self.critic_1(state, action)
+        q2 = self.critic_2(state, action)
 
         with T.no_grad():
             # target action from the CURRENT policy
-            action_, log_probs_ = self.actor.sample_normal(state, reparameterize=True)
-            log_probs_ = log_probs_
+            action_, log_probs_ = self.actor.sample_normal(state_, reparameterize=True)
 
             # target Q values
             q1_targ = self.target_critic_1(state_, action_)
@@ -93,8 +101,8 @@ class Agent:
                 q_targ - self.alpha * log_probs_
             )
 
-        loss_q1 = F.mse_loss(q1, backup)
-        loss_q2 = F.mse_loss(q2, backup)
+        loss_q1 = 0.5 * F.mse_loss(q1, backup)
+        loss_q2 = 0.5 * F.mse_loss(q2, backup)
         loss_q = loss_q1 + loss_q2
 
         # Useful info for logging
@@ -113,7 +121,7 @@ class Agent:
         # print("min q value size: ", q.size())
 
         # Entropy-regularized policy loss
-        loss_pi = T.mean(self.alpha * log_probs_ - q)
+        loss_pi = -T.mean(q - self.alpha * log_probs_)
 
         # Useful info for logging
         pi_info = dict(LogPi=log_probs_.cpu().detach().numpy())
@@ -135,15 +143,17 @@ class Agent:
         action = T.tensor(action, dtype=T.float).to(self.actor.device)
 
         # backprop 2 critic networks
-        self.critic_1.optimizer.zero_grad()
-        self.critic_2.optimizer.zero_grad()
+        # self.critic_1.optimizer.zero_grad()
+        # self.critic_2.optimizer.zero_grad()
+        self.q_optimizer.zero_grad()
         loss_q, loss_q1, loss_q2, q_info = self.compute_q_loss(
             reward, done, state, state_, action
         )
         loss_q.backward()
         # alternative in spinningup up concat params of q1 & q2 and Adam together
-        self.critic_1.optimizer.step()
-        self.critic_2.optimizer.step()
+        # self.critic_1.optimizer.step()
+        # self.critic_2.optimizer.step()
+        self.q_optimizer.step()
 
         # backprop actor network
         # TODO: freeze gradients of 2 Q networks when updating policy
