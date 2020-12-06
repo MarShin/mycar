@@ -2,6 +2,7 @@ import pybullet_envs
 import gym
 import numpy as np
 import torch as T
+import time
 
 from actor_critic import Agent
 from gym import wrappers
@@ -111,6 +112,7 @@ def main(config):
         # load_checkpoint = False
         total_steps = steps_per_epoch * epochs
         observation, ep_ret, ep_len = env.reset(), 0, 0
+        start_time = time.time()
 
         # Main loop: collect experience in env and update/log each epoch
         for i in tqdm(range(total_steps)):
@@ -136,6 +138,9 @@ def main(config):
 
             # end of episode reset
             if done or (ep_len == max_ep_len):
+                wandb.log(
+                    {"ep_len": ep_len, "ep_ret": ep_ret, "avg_score": avg_score,}
+                )
                 observation, ep_ret, ep_len = env.reset(), 0, 0
 
             # update agent
@@ -148,23 +153,24 @@ def main(config):
                 score_history.append(ep_ret)
                 avg_score = np.mean(score_history[-100:])
 
-                print(f"episode {i} score {ep_ret} avg_score {avg_score}")
                 epoch = (i + 1) // steps_per_epoch
 
-                wandb.log(
-                    {
-                        "epoch": epoch,
-                        "score": ep_ret,
-                        "avg_score": avg_score,
-                        "loss_q": loss_q,
-                        "loss_q1": loss_q1,
-                        "loss_q2": loss_q2,
-                        "loss_p": loss_p,
-                        "q_info": q_info,
-                        "pi_info": pi_info,
-                        "env_info": info,
-                    }
-                )
+                ep_logs = {
+                    "TotalEnvInteracts": i,
+                    "epoch": epoch,
+                    "score": ep_ret,
+                    "avg_score": avg_score,
+                    "loss_q": loss_q,
+                    "loss_q1": loss_q1,
+                    "loss_q2": loss_q2,
+                    "loss_p": loss_p,
+                    "q_info": q_info,
+                    "pi_info": pi_info,
+                    "env_info": info,
+                    "ep_time": time.time() - start_time,
+                }
+                print(f"\n{ep_logs}\n")
+                wandb.log(ep_logs)
 
 
 if __name__ == "__main__":
