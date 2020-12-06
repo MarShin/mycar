@@ -2,6 +2,7 @@ import os
 import itertools
 import torch as T
 import torch.nn.functional as F
+import torch.optim as optim
 import numpy as np
 from buffer import ReplayBuffer
 from networks import ActorNetwork, CriticNetwork
@@ -57,7 +58,7 @@ class Agent:
         self.q_params = itertools.chain(
             self.critic_1.parameters(), self.critic_2.parameters()
         )
-        self.q_optimizer = Adam(q_params, lr=lr)
+        self.q_optimizer = optim.Adam(self.q_params, lr=lr)
 
     def choose_action(self, observation):
         with T.no_grad():
